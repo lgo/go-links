@@ -19,7 +19,7 @@
     },
     "GOLINKS_ENV": {
       "description": "The app environment.",
-      "value": "80"
+      "value": "prod"
     },
     "GOLINKS_LOGLEVEL": {
       "description": "The app logging level.",

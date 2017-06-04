@@ -43,10 +43,8 @@ curl localhost/admin/api/links/htn \
 
 If you're looking to just get started, there are pre-built binaries under Github Releases.
 
-This library was built and only tested with `go1.8.3`. In order to use it, it also assumes you have the following packages in your `GOPATH`, along with this repo[0].
+This library was built and only tested with `go1.8.3`. In order to use it, it also assumes you have this repo in your `GOPATH`, along with the vendored dependancies available.
 ```
 go get "github.com/sirupsen/logrus"
 go get "github.com/gorilla/mux"
 ```
-
-[0]: If the latest dependancy versions don't work, let me know and I'll vendor them.
