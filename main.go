@@ -1,119 +1,84 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
+	"github.com/xLegoz/go-links/backend"
+	"github.com/xLegoz/go-links/endpoint"
+	"github.com/xLegoz/go-links/util"
 	"net/http"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 )
 
-var links = make(map[string]string)
-var metrics = make(map[string]uint)
+var AdminKey string
+var Environment string
+var Addr string
+var LogLevel string
 
-var linkLock sync.RWMutex
-var metrixLock sync.Mutex
+func init() {
+	// get environment
+	Environment = util.Getenv("GOLINK_ENV", "dev")
 
-func getenv(key, fallback string) string {
-	value := os.Getenv(key)
-	if len(value) == 0 {
-		return fallback
+	// set logger level
+	LogLevel = util.Getenv("GOLINK_LOGLEVEL", "info")
+	if LogLevel == "info" {
+		log.SetLevel(log.InfoLevel)
+	} else if LogLevel == "warning" {
+		log.SetLevel(log.WarnLevel)
+	} else if LogLevel == "debug" {
+		log.SetLevel(log.DebugLevel)
 	}
-	return value
-}
 
-func metricCount(url string) {
-	metrics[url] += 1
-	// record with GAnalytics if possible, or will the target website record?
-}
-
-func GetGolink(r *http.Request) (string, bool) {
-	if dest, ok := links[r.URL.Path[1:]]; ok {
-		return dest, true
-	} else {
-		return "", false
-	}
-}
-
-func AdminDashboardHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hi there, I love %s!", r.URL.Path[1:])
-}
-
-type GoLinkStruct struct {
-	URL string `json:"url"`
-}
-
-func AdminApiLinksHandler(w http.ResponseWriter, r *http.Request) {
-	link := mux.Vars(r)["link"]
-	switch r.Method {
-	case "GET":
-		fmt.Fprintf(w, "GET there, I love %s!", link)
-	case "POST":
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			panic(err)
-		}
-		var t GoLinkStruct
-		err = json.Unmarshal(body, &t)
-		if err != nil {
-			panic(err)
-		}
-		log.WithFields(log.Fields{
-			"shortlink": link,
-			"url":       t.URL,
-		}).Info("Set shortlink")
-		links[link] = t.URL
-	default:
-		// Give an error message.
-	}
-}
-
-func GolinkHandler(w http.ResponseWriter, r *http.Request) {
-	if dest, ok := GetGolink(r); ok {
-		// metricCount(newUrl)
-		http.Redirect(w, r, dest, http.StatusSeeOther)
-	} else {
-		http.Error(w, "Unsupported path", http.StatusNotFound)
-	}
-}
-
-func main() {
-	port, err := strconv.Atoi(getenv("PORT", "8080"))
+	// get port
+	port, err := strconv.Atoi(util.Getenv("PORT", "8080"))
 	if err != nil {
 		log.WithFields(log.Fields{
-			"port": getenv("PORT", "8080"),
+			"port": util.Getenv("PORT", "8080"),
 		}).Fatal("Invalid PORT environment variable: expected integer.")
 		os.Exit(1)
 	}
 
-	env := getenv("GOLINK_ENV", "dev")
-
-	log.WithFields(log.Fields{
-		"port": port,
-		"env":  env,
-	}).Info("Starting go-link HTTP server")
-
-	var addr string
-
-	if env == "dev" {
-		addr = fmt.Sprintf("127.0.0.1:%d", port)
-	} else if env == "prod" {
-		addr = fmt.Sprintf("0.0.0.0:%d", port)
+	AdminKey = util.Getenv("ADMIN_KEY", "")
+	if len(AdminKey) < 16 {
+		log.WithFields(log.Fields{
+			"AdminKey": AdminKey,
+		}).Fatal("Invalid ADMIN_KEY environment variable: needs to be at least 16 characters.")
+		os.Exit(1)
 	}
 
+	if Environment == "dev" {
+		Addr = fmt.Sprintf("127.0.0.1:%d", port)
+	} else if Environment == "prod" {
+		Addr = fmt.Sprintf("0.0.0.0:%d", port)
+	}
+}
+
+func main() {
+	log.WithFields(log.Fields{
+		"Addr":        Addr,
+		"Environment": Environment,
+		"LogLevel":    LogLevel,
+	}).Info("Starting go-link HTTP server")
+
+	backend.ActiveBackend = &backend.Dict{}
+	backend.ActiveBackend.Start()
+
 	router := mux.NewRouter()
-	router.HandleFunc("/admin/dashboard", AdminDashboardHandler).Methods("GET")
-	router.HandleFunc("/admin/api/links/{link}", AdminApiLinksHandler).Methods("GET", "POST")
-	router.NotFoundHandler = http.HandlerFunc(GolinkHandler)
+
+	// Authorized via. middleware
+	var headerAuth = util.AuthOptions{AdminKey: AdminKey, AuthMethod: util.AuthWithHeader}
+	var queryAuth = util.AuthOptions{AdminKey: AdminKey, AuthMethod: util.AuthWithQueryParam}
+	router.HandleFunc("/admin/dashboard", util.BasicAuth(queryAuth)(endpoint.AdminDashboardHandler)).Methods("GET")
+	router.HandleFunc("/admin/api/links/{link}", util.BasicAuth(headerAuth)(endpoint.AdminApiLinksHandler)).Methods("GET", "POST")
+
+	router.NotFoundHandler = http.HandlerFunc(endpoint.GolinkHandler)
 
 	srv := &http.Server{
 		Handler: router,
-		Addr:    addr,
+		Addr:    Addr,
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,

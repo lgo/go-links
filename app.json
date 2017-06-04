@@ -1,0 +1,29 @@
+{
+  "name": "go-links",
+  "description": "A simple URL shortener",
+  "repository": "https://github.com/xLegoz/go-links",
+  "keywords": ["golang", "url", "shortener", "simple", "http"],
+  "buildpacks": [
+    {
+      "url": "heroku/go"
+    }
+  ],
+  "env": {
+    "ADMIN_KEY": {
+      "description": "A secret key for authenticating as the admin.",
+      "generator": "secret"
+    },
+    "PORT": {
+      "description": "The port to run on.",
+      "value": "80"
+    },
+    "GOLINKS_ENV": {
+      "description": "The app environment.",
+      "value": "80"
+    },
+    "GOLINKS_LOGLEVEL": {
+      "description": "The app logging level.",
+      "value": "info"
+    }
+  }
+}
