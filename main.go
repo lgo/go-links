@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/xLegoz/go-links/backend"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,19 +19,22 @@ var AdminKey string
 var Environment string
 var Addr string
 var LogLevel string
+var Store string
 
 func init() {
-	// get environment
-	Environment = util.Getenv("GOLINK_ENV", "dev")
-
 	// set logger level
-	LogLevel = util.Getenv("GOLINK_LOGLEVEL", "info")
-	if LogLevel == "info" {
-		log.SetLevel(log.InfoLevel)
-	} else if LogLevel == "warning" {
-		log.SetLevel(log.WarnLevel)
-	} else if LogLevel == "debug" {
+	switch LogLevel = util.Getenv("GOLINK_LOGLEVEL", "info"); LogLevel {
+	case "debug":
 		log.SetLevel(log.DebugLevel)
+	case "info":
+		log.SetLevel(log.InfoLevel)
+	case "warning":
+		log.SetLevel(log.WarnLevel)
+	default:
+		log.WithFields(log.Fields{
+			"GOLINKS_STORE": Store,
+		}).Fatal("Invalid GOLINKS_LOGLEVEL environment variable: expected one of 'debug', 'info', 'warning'")
+		os.Exit(1)
 	}
 
 	// get port
@@ -41,6 +46,7 @@ func init() {
 		os.Exit(1)
 	}
 
+	// get secret admin key
 	AdminKey = util.Getenv("ADMIN_KEY", "")
 	if len(AdminKey) < 16 {
 		log.WithFields(log.Fields{
@@ -49,10 +55,47 @@ func init() {
 		os.Exit(1)
 	}
 
-	if Environment == "dev" {
+	// get the backend store settings
+	switch Store = util.Getenv("GOLINKS_STORE", "dict"); Store {
+	case "dict":
+		backend.ActiveBackend = &backend.Dict{}
+	case "redis":
+		backend.ActiveBackend = setupRedis()
+	default:
+		log.WithFields(log.Fields{
+			"GOLINKS_STORE": Store,
+		}).Fatal("Invalid GOLINKS_STORE environment variable: either 'dict' or 'redis'")
+		os.Exit(1)
+	}
+
+	// get environment
+	switch Environment = util.Getenv("GOLINKS_ENV", "dev"); Environment {
+	case "dev":
 		Addr = fmt.Sprintf("127.0.0.1:%d", port)
-	} else if Environment == "prod" {
+	case "prod":
 		Addr = fmt.Sprintf("0.0.0.0:%d", port)
+	default:
+		log.WithFields(log.Fields{
+			"GOLINKS_ENV": Environment,
+		}).Fatal("Invalid GOLINKS_ENV environment variable: either 'dev' or 'prod'")
+		os.Exit(1)
+	}
+}
+
+func setupRedis() *backend.Redis {
+	// default to standard redis port on localhost
+	redisURL := util.Getenv("REDIS_URL", "redis://h:@localhost:6379")
+	parts := strings.Split(redisURL, "@")
+	redisAddress := parts[1]
+	parts = strings.Split(parts[0], ":")
+	redisPassword := parts[2]
+
+	return &backend.Redis{
+		Options: &redis.Options{
+			Addr:     redisAddress,
+			Password: redisPassword,
+			DB:       0, // use default DB
+		},
 	}
 }
 
@@ -61,11 +104,10 @@ func main() {
 		"Addr":        Addr,
 		"Environment": Environment,
 		"LogLevel":    LogLevel,
+		"Store":       Store,
 	}).Info("Starting go-link HTTP server")
 
-	backend.ActiveBackend = &backend.Dict{}
 	backend.ActiveBackend.Start()
-
 	router := mux.NewRouter()
 
 	// Authorized via. middleware

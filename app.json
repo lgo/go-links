@@ -8,14 +8,13 @@
       "url": "heroku/go"
     }
   ],
+  "addons": [
+    "heroku-redis:hobby-dev"
+  ],
   "env": {
     "ADMIN_KEY": {
       "description": "A secret key for authenticating as the admin.",
       "generator": "secret"
-    },
-    "PORT": {
-      "description": "The port to run on.",
-      "value": "80"
     },
     "GOLINKS_ENV": {
       "description": "The app environment.",
@@ -24,6 +23,10 @@
     "GOLINKS_LOGLEVEL": {
       "description": "The app logging level.",
       "value": "info"
+    },
+    "GOLINKS_STORE": {
+      "description": "The store to use for GoLinks, defaulting redis.",
+      "value": "redis"
     }
   }
 }

@@ -5,8 +5,8 @@ package backend
  */
 type AbstractBackend interface {
 	Start()
-	Store(string, string) bool
-	Get(string) (string, bool)
+	Store(string, string) error
+	Get(string) (string, error)
 	Delete(string) bool
 	MetricIncrement(string)
 	MetricGet(string) uint

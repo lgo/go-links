@@ -11,13 +11,15 @@ For information on building, see the section at the end.
 ### Running
 
 ```
-ADMIN_KEY=<secret> PORT=80 GOLINK_ENV=prod ./golinks
+ADMIN_KEY=<secret> PORT=80 GOLINKS_ENV=prod ./golinks
 ```
 
 - `ADMIN_KEY` is used for authenticating the administrative endpoints and is required.
 - `PORT` is optional, defaulting to `8080`.
-- `GOLINK_ENV` defaults to `dev`. `prod` runs on `0.0.0.0`, `dev` runs on `127.0.0.1`
-- `GOLINK_LOGLEVEL` defaults to `info`, and has the options `debug`, `info`, `warn`.
+- `GOLINKS_ENV` defaults to `dev`. `prod` runs on `0.0.0.0`, `dev` runs on `127.0.0.1`
+- `GOLINKS_LOGLEVEL` defaults to `info`, and has the options `debug`, `info`, `warn`.
+- `GOLINKS_STORE` defaults to `dict`, and has the options `dict`, `redis`.
+
 
 ### Adding short links
 
@@ -37,6 +39,15 @@ To see what a short link is set to, along with the metrics
 curl localhost/admin/api/links/htn \
   -H "Golink-Auth: <ADMIN_KEY>" \
 > {"url":"https://hackthenorth.com","metrics":0}
+```
+
+### Storage configuration
+The default simple setup uses an ephemeral dictionary, but if you wish to persist short links you can set up Redis with the following configuration:
+
+```bash
+GOLINKS_STORE=redis
+REDIS_URL=<url> # defaults to "redis://h:@localhost:6379"
+# Format: redis://h:<password>@<host>:<port>
 ```
 
 ### Building

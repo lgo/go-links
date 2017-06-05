@@ -9,13 +9,27 @@ import (
 	"net/http"
 )
 
-type goLinkPostStruct struct {
+type goLinkPostRequestStruct struct {
 	URL string `json:"url"`
+}
+
+type goLinkPostResponseStruct struct {
+	Success bool `json:"success"`
 }
 
 type goLinkGetStruct struct {
 	URL     string `json:"url"`
 	Metrics uint   `json:"metrics"`
+}
+
+func writeJSON(w http.ResponseWriter, body interface{}) {
+	jsonBytes, err := json.Marshal(body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonBytes)
 }
 
 /**
@@ -25,29 +39,22 @@ func AdminApiLinksHandler(w http.ResponseWriter, r *http.Request) {
 	link := mux.Vars(r)["link"]
 	switch r.Method {
 	case "GET":
-		url, ok := backend.ActiveBackend.Get(link)
-		if !ok {
+		url, err := backend.ActiveBackend.Get(link)
+		if err != nil {
 			http.Error(w, "Short link not found.", http.StatusNotFound)
 			return
 		}
-
-		body, err := json.Marshal(goLinkGetStruct{
+		writeJSON(w, goLinkGetStruct{
 			URL:     url,
 			Metrics: backend.ActiveBackend.MetricGet(link),
 		})
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(body)
 	case "POST":
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		var t goLinkPostStruct
+		var t goLinkPostRequestStruct
 		err = json.Unmarshal(body, &t)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -57,7 +64,15 @@ func AdminApiLinksHandler(w http.ResponseWriter, r *http.Request) {
 			"shortlink": link,
 			"url":       t.URL,
 		}).Info("Set shortlink")
-		backend.ActiveBackend.Store(link, t.URL)
+		err = backend.ActiveBackend.Store(link, t.URL)
+		if err != nil {
+
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, goLinkPostResponseStruct{
+			Success: true,
+		})
 	default:
 		// Give an error message.
 	}

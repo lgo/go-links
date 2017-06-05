@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"sync"
 )
 
@@ -29,13 +30,12 @@ func (b *Dict) Start() {
  * Store a value
  * @return true if overwritting
  */
-func (b *Dict) Store(key string, value string) bool {
+func (b *Dict) Store(key string, value string) error {
 	b.linksLock.Lock()
 	defer b.linksLock.Unlock()
-	_, present := b.links[key]
 	b.links[key] = value
 	b.metrics[key] = 0
-	return present
+	return nil
 }
 
 /**
@@ -43,11 +43,14 @@ func (b *Dict) Store(key string, value string) bool {
  * @return (url, true) if present
  *         (_, false) if no value present
  */
-func (b *Dict) Get(key string) (string, bool) {
+func (b *Dict) Get(key string) (string, error) {
 	b.linksLock.RLock()
 	defer b.linksLock.RUnlock()
-	str, present := b.links[key]
-	return str, present
+	if str, ok := b.links[key]; ok {
+		return str, nil
+	} else {
+		return "", errors.New("No key found.")
+	}
 }
 
 /**

@@ -12,14 +12,14 @@ import (
  */
 func GolinkHandler(w http.ResponseWriter, r *http.Request) {
 	path := util.PathFromRequest(r)
-	if dest, ok := backend.ActiveBackend.Get(path); ok {
+	if destinationURL, err := backend.ActiveBackend.Get(path); err == nil {
 		backend.ActiveBackend.MetricIncrement(path)
 		log.WithFields(log.Fields{
 			"path":  path,
 			"count": backend.ActiveBackend.MetricGet(path),
 		}).Debug("GET shortlinks")
-		http.Redirect(w, r, dest, http.StatusSeeOther)
+		http.Redirect(w, r, destinationURL, http.StatusSeeOther)
 	} else {
-		http.Error(w, "Unsupported path", http.StatusNotFound)
+		http.Error(w, "Not found", http.StatusNotFound)
 	}
 }
