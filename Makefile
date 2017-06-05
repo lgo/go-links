@@ -1,15 +1,25 @@
-all: golinks_linux golinks_osx golinks_windows.exe
+all:golinks_linux_x86 golinks_linux_x64 golinks_osx_x86 golinks_osx_x64 golinks_windows_x86.exe golinks_windows_x64.exe
 
-golinks_linux:
+golinks_linux_x86:
 	GOOS=linux GOARCH=386 go build -o $@
 
-golinks_osx:
+golinks_osx_x86:
 	GOOS=darwin GOARCH=386 go build -o $@
 
-golinks_windows.exe:
+golinks_windows_x86.exe:
 	GOOS=windows GOARCH=386 go build -o $@
 
-clean:
-	rm golinks_osx golinks_linux golinks_windows.exe
+golinks_linux_x64:
+	GOOS=linux GOARCH=amd64 go build -o $@
 
-.PHONY: golinks_linux golinks_osx golinks_windows.exe clean
+golinks_osx_x64:
+	GOOS=darwin GOARCH=amd64 go build -o $@
+
+golinks_windows_x64.exe:
+	GOOS=windows GOARCH=amd64 go build -o $@
+
+
+clean:
+	rm golinks_*
+
+.PHONY: golinks_linux_x86 golinks_linux_x64 golinks_osx_x86 golinks_osx_x64 golinks_windows_x86.exe golinks_windows_x64.exe clean
