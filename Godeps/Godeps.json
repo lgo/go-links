@@ -4,6 +4,36 @@
 	"GodepVersion": "v79",
 	"Deps": [
 		{
+			"ImportPath": "github.com/go-redis/redis",
+			"Comment": "v6.4.1-2-gf29951c",
+			"Rev": "f29951c8990f0d31d1bacc27393ac88e3edf7e21"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal",
+			"Comment": "v6.4.1-2-gf29951c",
+			"Rev": "f29951c8990f0d31d1bacc27393ac88e3edf7e21"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/consistenthash",
+			"Comment": "v6.4.1-2-gf29951c",
+			"Rev": "f29951c8990f0d31d1bacc27393ac88e3edf7e21"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/hashtag",
+			"Comment": "v6.4.1-2-gf29951c",
+			"Rev": "f29951c8990f0d31d1bacc27393ac88e3edf7e21"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/pool",
+			"Comment": "v6.4.1-2-gf29951c",
+			"Rev": "f29951c8990f0d31d1bacc27393ac88e3edf7e21"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/proto",
+			"Comment": "v6.4.1-2-gf29951c",
+			"Rev": "f29951c8990f0d31d1bacc27393ac88e3edf7e21"
+		},
+		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.4.0-10-g18fca31",
 			"Rev": "18fca31550181693b3a834a15b74b564b3605876"
