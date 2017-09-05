@@ -48,15 +48,26 @@ func (b *Dict) Get(key string) (string, error) {
 	defer b.linksLock.RUnlock()
 	if str, ok := b.links[key]; ok {
 		return str, nil
-	} else {
-		return "", errors.New("No key found.")
 	}
+	return "", errors.New("no key found")
+}
+
+/**
+ * GetAll ...
+ * @return (url, true) if present
+ *         (_, false) if no value present
+ */
+func (b *Dict) GetAll() (map[string]string, error) {
+	b.linksLock.RLock()
+	defer b.linksLock.RUnlock()
+	return b.links, nil
 }
 
 /**
  * Delete ...
  * @return true if deleted
  *         false if not present
+ * FIXME: should return an error also
  */
 func (b *Dict) Delete(key string) bool {
 	b.linksLock.Lock()
@@ -89,7 +100,6 @@ func (b *Dict) MetricGet(key string) uint {
 	defer b.metricsLock.Unlock()
 	if val, ok := b.metrics[key]; ok {
 		return val
-	} else {
-		return 0
 	}
+	return 0
 }

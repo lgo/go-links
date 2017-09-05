@@ -44,6 +44,16 @@ func (b *Redis) Get(key string) (string, error) {
 }
 
 /**
+ * Get ...
+ * @return (url, true) if present
+ *         (_, false) if no value present
+ */
+func (b *Redis) GetAll() (map[string]string, error) {
+	str, err := b.client.HGetAll("links").Result()
+	return str, err
+}
+
+/**
  * Delete ...
  * @return true if deleted
  *         false if not present
@@ -68,7 +78,6 @@ func (b *Redis) MetricIncrement(key string) {
 func (b *Redis) MetricGet(key string) uint {
 	if val, err := b.client.HGet("metrics", key).Uint64(); err == nil {
 		return uint(val)
-	} else {
-		return 0
 	}
+	return 0
 }

@@ -5,6 +5,7 @@ package backend
  */
 type AbstractBackend interface {
 	Start()
+	GetAll() (map[string]string, error)
 	Store(string, string) error
 	Get(string) (string, error)
 	Delete(string) bool

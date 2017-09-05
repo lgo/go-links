@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/xLegoz/go-links/backend"
 	"github.com/xLegoz/go-links/endpoint"
 	"github.com/xLegoz/go-links/util"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var AdminKey string
@@ -23,7 +24,7 @@ var Store string
 
 func init() {
 	// set logger level
-	switch LogLevel = util.Getenv("GOLINK_LOGLEVEL", "info"); LogLevel {
+	switch LogLevel = util.Getenv("GOLINKS_LOGLEVEL", "info"); LogLevel {
 	case "debug":
 		log.SetLevel(log.DebugLevel)
 	case "info":
@@ -48,10 +49,10 @@ func init() {
 
 	// get secret admin key
 	AdminKey = util.Getenv("ADMIN_KEY", "")
-	if len(AdminKey) < 16 {
+	if len(AdminKey) < 4 {
 		log.WithFields(log.Fields{
 			"AdminKey": AdminKey,
-		}).Fatal("Invalid ADMIN_KEY environment variable: needs to be at least 16 characters.")
+		}).Fatal("Invalid ADMIN_KEY environment variable: needs to be at least 4 characters.")
 		os.Exit(1)
 	}
 
